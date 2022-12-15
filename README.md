@@ -1,4 +1,3 @@
-# uconn_reu
 
 Required packages:
  * [bloom-filter2](https://pypi.org/project/bloom-filter2/) 
