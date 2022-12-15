@@ -1,0 +1,10 @@
+venv/
+.idea/
+__pycache__/
+*.csv
+datasets/*
+!datasets/synthetic_dataset.zip
+tests_graph_csv/.DS_Store
+.DS_Store
+.vscode/
+heap*
