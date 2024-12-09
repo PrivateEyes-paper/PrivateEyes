@@ -94,8 +94,12 @@ def build_ND_dataset(show_hist = False):
     for dir in dir_list:
         feat_list = glob.glob(dir + "//*")
         nd_dataset[i] = [read_fvector(x) for x in feat_list]
+
         class_labels[i] = dir
-        i = i + 1
+        if (len(nd_dataset[i]) != 0):
+            i = i + 1
+        else:
+            print("Empty list " + str(i))
 
     nd_templates = [nd_dataset[x][0] for x in nd_dataset]
     nd_queries = [nd_dataset[x][1] for x in nd_dataset]
@@ -166,13 +170,14 @@ def compute_sys_rates(tree, queries, parallel, oram):
     nb_matching_roots = []
 
     # run queries on whole dataset
+    parallel_time = []
     for i in range(len(queries)):
-        (returned_iris_list, leaf_nodes, nodes_visited, access_depth, num_root_matches) = tree.search(
+        (returned_iris_list, leaf_nodes, nodes_visited, access_depth, num_root_matches, time_max_depth) = tree.search(
             queries[i])  # parallel = False for now because parallel search is way slower than expected
 
         visited_nodes.append(sum(1 for x in nodes_visited for y in nodes_visited[x]))
         nb_matching_roots.append(num_root_matches)
-        res = [item[1] for item in leaf_nodes]
+
 
         no_dup_res = list(set(returned_iris_list))
         found_iris = 0
@@ -199,6 +204,7 @@ def compute_sys_rates(tree, queries, parallel, oram):
         good_traversals.append(tmp_good_traversals)
         bad_traversals.append(tmp_bad_traversals)
 
+        parallel_time.append(sum(time_max_depth))
         # if 0 == i % 10 and i > 0:
         #     print("Query number " + str(i + 1) + " of " + str(len(queries)))
         #     print("True Positive Rate = " + str(true_pos / (i + 1)))
@@ -226,19 +232,22 @@ def compute_sys_rates(tree, queries, parallel, oram):
     print("Max good traversals = " + str(max(good_traversals)))
     print("Avg bad traversals = " + str(sum(bad_traversals) / len(queries)))
     print("Max bad traversals = " + str(max(bad_traversals)))
+    print("Parallel time "+str(sum(parallel_time)))
 
 
     show_match_histogram = 0
     if show_match_histogram == 1:
-        # plt.hist(good_traversals, density=True, bins=max(good_traversals+bad_traversals)+1, histtype='stepfilled',
-        #          color='b', alpha=0.7, label='Good Matches')
+        plt.hist(good_traversals, density=True, bins=max(good_traversals)+1, histtype='stepfilled',
+                  color='b', alpha=0.7, label='Good Matches')
 
-        # plt.hist(bad_traversals, density=True, bins=max(good_traversals+bad_traversals)+1, histtype='stepfilled',
-        #              color='r', label='Bad Matches')
-        plt.hist(bad_traversals, density=True, bins=max(bad_traversals) + 1, histtype='stepfilled',
-                 color='r', label='Bad Matches')
+        # plt.hist(bad_traversals, density=True, bins=max(bad_traversals)+1, histtype='stepfilled',
+        #               color='r', label='Bad Matches')
+        plt.ylim(0, .08)
+        plt.xlim(0, 120)
+        # plt.hist(bad_traversals, density=True, bins=max(bad_traversals) + 1, histtype='stepfilled',
+        #          color='r', label='Bad Matches')
         plt.legend()
-        plt.xlabel("Number of root matches")
+        plt.xlabel("Number of matches")
         plt.ylabel("Frequency")
         plt.show()
 
@@ -293,18 +302,19 @@ def build_show_histogram(data, queries):
     blueW = [1/len(blueDist) for i in range(0, len(blueDist))]
     redW = [1/len(redDist) for i in range(0, len(redDist))]
     if len(blueDist) > 0:
-        plt.hist(blueDist, density=True, bins=41, histtype='stepfilled', weights= blueW,
+        plt.hist(blueDist, density=True, bins=26, histtype='stepfilled', weights= blueW,
                  color='b', alpha=0.7, label='Comparisons readings same iris')
 
     if len(redDist) > 0:
-        plt.hist(redDist, density=True, bins=41, histtype='stepfilled', weights = redW,
+        plt.hist(redDist, density=True, bins=26, histtype='stepfilled', weights = redW,
                  color='r', label='Comparisons different irises')
 
     if len(redDist) >0 or len(blueDist) > 0:
+        plt.ylim(0.0, 30)
         plt.legend()
         plt.xlabel("Hamming Distance")
         plt.ylabel("Frequency")
-        plt.title("Random Data")
+        plt.title("ND-0405 Dataset")
         plt.show()
 
 #    plt.hist(redComparisons, normed=True, bins=120, histtype='stepfilled', color='r', label='Different')
